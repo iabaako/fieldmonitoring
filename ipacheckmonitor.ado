@@ -347,7 +347,7 @@ program define ipacheckmonitor
 		
 		use `_transit', clear
 		collapse 	(last) 	enumerator_name 									 	 ///
-					(sum)	count_ if valid_submission,							 	 ///
+					(sum)	count_ if valid_submissions,							 ///
 					by (enumerator_id enumerator_role week)
 
 		keep enumerator_id enumerator_name enumerator_role count_ week
