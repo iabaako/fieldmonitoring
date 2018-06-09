@@ -1,5 +1,7 @@
-*! Version 2 (ALPHA) Ishmail Azindoo Baako Apr, 2018
-
+*! Version 2.0 Ishmail Azindoo Baako May, 2018
+	* Stata program to analyse and report on field montoring data captured
+	* using the IPA Field Monitoring Form
+	
 program define ipacheckmonitor
 	#d;
 	syntax using/, 
@@ -8,6 +10,18 @@ program define ipacheckmonitor
 		[commentdata(string) languagedata(string)]
 		;
 	#d cr
+	
+	/* Syntax description. 
+		using - specifies main monitoring dataset (.dta format)
+		outfile - specifies output file name and location (.xlsx format)
+		xlsform - specifies surveycto xls form (.xlsx format) 
+		commentdata - specifies comment repeat dataset long format datasets only. 
+			If dataset is in wide format, the program will auto extract and save 
+			commendata
+		languagedata - specifies language repeat dataset for long format datasets 
+			only. If dataset is in wide format, the program will auto extract and 
+			save commendata
+	*/
 	
 	qui {
 		
@@ -22,13 +36,15 @@ program define ipacheckmonitor
 		/* ---------------------------------
 		IMPORT ADDITIONAL INFO FROM XLS FORM
 		------------------------------------ */	
+		
+		* import the choices sheet and save names and labels of equipment 
 		import excel using "`xlsform'", firstrow sheet(choices) clear
 		keep if list_name == "equipment"
 		keep list_name value label
 		loc equip_count	`=_N' 
 		levelsof value, loc (equips) clean
 		
-		* create local to hold labels for equipment
+		* Create local to hold labels for equipment
 		loc equip_labels ""
 		forval i = 1/`equip_count' {
 			loc equip_value = value[`i']
@@ -42,7 +58,12 @@ program define ipacheckmonitor
 		------------------------------------- */
 		* use main dataset
 		use "`using'", clear
-		* gen week variable
+		
+		* drop observations from same monitor_id and enumerator_id which have
+		* the same starttime, this will indicate a duplicate submission
+		duplicates drop mon_id enumerator_id starttime, force
+		
+		* gen week variable. Weeks are from Sunday - Saturday
 		sort submissiondate
 		cap gen subdate 	= dofc(submissiondate)
 		cap gen startdate 	= dofc(starttime)
@@ -60,7 +81,7 @@ program define ipacheckmonitor
 		replace onsite = onsite_mode
 			
 		save `_data'
-
+	
 		/* ------------------
 		   SAVE COMMENTS DATA
 		--------------------- */
@@ -184,7 +205,7 @@ program define ipacheckmonitor
 		
 		* relabel variables
 		relabel subdate enumerator_id enumerator_name enumerator_role mon_id mon_name mon_role 
-
+	
 		/* ---------------------------
 		REPORT ON SUBMISSION
 		------------------------------ */
@@ -373,51 +394,52 @@ program define ipacheckmonitor
 		-------------------------------------------- */	
 		use `_data', clear
 		
-		if `=_N' > 0 {
-			decode c_language_main, gen (language)
+		decode c_language_main, gen (language)
+		ren c_language_main_prof proficiency
+		keep enumerator_id enumerator_name enumerator_role count_ language ///
+			c_languages_fs c_languages_fs_rpt_count setofc_languages_fs_rpt proficiency
+	
+		if "`_language'" ~= "" & `lang_count' > 0 {
+			keep if !missing(setofc_languages_fs_rpt)
+			* merge with language data
+			merge 1:m setofc_languages_fs_rpt using `_language', nogen 
+			drop language
+			rename (c_languages_fs_lab_r c_languages_fs_prof_r) (language proficiency)
+			save `_transit'
+				
+			use `_data', clear
 			ren c_language_main_prof proficiency
-			keep enumerator_id enumerator_name enumerator_role count_ language ///
-				c_languages_fs c_languages_fs_rpt_count setofc_languages_fs_rpt
-				
-			if "`_language'" ~= "" & `lang_count' > 0 {
-				keep if !missing(setofc_languages_fs_rpt)
-				* merge with language data
-				merge 1:m setofc_languages_fs_rpt using `_language', nogen 
-				drop language
-				rename (c_languages_fs_lab_r c_languages_fs_prof_r) (language proficiency)
-				save `_transit'
-				
-				use `_data', clear
-				ren c_language_main_prof proficiency
-				decode c_language_main, gen (language)
-				keep if missing(setofc_languages_fs_rpt)
-				append using `_transit'
-			}
-			else {
-				keep if missing(setofc_languages_fs_rpt)
-			}
+			decode c_language_main, gen (language)
+			keep if missing(setofc_languages_fs_rpt)
+			append using `_transit'
+		}
+		else {
+			keep if missing(setofc_languages_fs_rpt)
+		}
 			
 			* collapse data by enumerator and position
-			collapse 	(first) enumerator_name								///
-						(sum) submissions = count_							///
-						(mean) proficiency, by(enumerator_id enumerator_role language)
-						
-			label val proficiency c_language_main_prof
-			relabel enumerator_* 
-			lab var proficiency "Proficiency (Oral)"
-			lab var language	"Language" 
-			lab var submissions "submissions"
+		collapse 	(first) enumerator_name								///
+					(sum) submissions = count_							///
+					(mean) proficiency, by(enumerator_id enumerator_role language)
+		
+		* round proficiency to the nearest whole number
+		replace proficiency = round(proficiency)
+		
+		label val proficiency c_language_main_prof
+		relabel enumerator_* 
+		lab var proficiency "Proficiency (Oral)"
+		lab var language	"Language" 
+		lab var submissions "submissions"
 			
-			putexcel set "`outfile'", sheet("Language") modify
-			putexcel A1:F1 = "LANGUAGE PROFICIENCY (ORAL)", 				 						 ///
-						merge hcenter font(calibri, 12, red) bold border(bottom, double)
-			putexcel A2:F2, hcenter bold border(bottom)
+		putexcel set "`outfile'", sheet("Language") modify
+		putexcel A1:F1 = "LANGUAGE PROFICIENCY (ORAL)", 				 						 ///
+					merge hcenter font(calibri, 12, red) bold border(bottom, double)
+		putexcel A2:F2, hcenter bold border(bottom)
 			
-			sort enumerator_role enumerator_id 
-			export excel enumerator_id enumerator_name enumerator_role submissions language proficiency using "`outfile'", ///
-				sheet("Language") sheetmodify         ///
-				cell(A2) first(varlab)
-		}
+		sort enumerator_role enumerator_id 
+		export excel enumerator_id enumerator_name enumerator_role submissions language proficiency using "`outfile'", ///
+			sheet("Language") sheetmodify         ///
+			cell(A2) first(varlab)
 							 
 		/* -------------------------------
 		   OUTPUT RETRAIN AND REPLACE LIST
@@ -501,7 +523,7 @@ program define ipacheckmonitor
 			lab var recommendation_comment "Comment"
 			
 		* Check if there were absentees
-		cap assert present < 1
+		cap assert present == 1
 		if !_rc {
 			noi disp "No Absentee list to export"
 		}
@@ -622,6 +644,7 @@ program define ipacheckmonitor
 
 	
 		* reshape data to long format
+		duplicates drop startdate enumerator_id mon_id, force
 		reshape long equip_, i(startdate enumerator_id mon_id) j(index)
 		* drop cases where equipments were not missing
 		drop if !equip_
