@@ -402,7 +402,7 @@ program define ipacheckmonitor
 		if "`_language'" ~= "" & `lang_count' > 0 {
 			keep if !missing(setofc_languages_fs_rpt)
 			* merge with language data
-			merge 1:m setofc_languages_fs_rpt using `_language', nogen 
+			merge 1:m setofc_languages_fs_rpt using `_language', nogen keep(match master)
 			drop language
 			rename (c_languages_fs_lab_r c_languages_fs_prof_r) (language proficiency)
 			save `_transit'
@@ -416,8 +416,10 @@ program define ipacheckmonitor
 		else {
 			keep if missing(setofc_languages_fs_rpt)
 		}
-			
-			* collapse data by enumerator and position
+		
+		* drop languages with missing proficiency. This will happen if monitor does not understand language
+		drop if missing(proficiency)
+		* collapse data by enumerator and position
 		collapse 	(first) enumerator_name								///
 					(sum) submissions = count_							///
 					(mean) proficiency, by(enumerator_id enumerator_role language)
@@ -523,7 +525,7 @@ program define ipacheckmonitor
 			lab var recommendation_comment "Comment"
 			
 		* Check if there were absentees
-		cap assert present == 1
+		cap assert present == 1 | missing(present)
 		if !_rc {
 			noi disp "No Absentee list to export"
 		}
@@ -618,7 +620,7 @@ program define ipacheckmonitor
 		putexcel A3:`col'`rowcount', nformat(number_d2)
 		
 		* Export Field Staff with missing equipment
-		if `miss_equip_count' >= 0 {
+		if `miss_equip_count' > 0 {
 			* re-import data
 			noi disp "Exporting `miss_equip_count' cases of missing equipment to sheet Equipment"
 			use `_data', clear
@@ -640,49 +642,49 @@ program define ipacheckmonitor
 				 equip_*
 				 ;
 			#d cr
-		}
-
 	
-		* reshape data to long format
-		duplicates drop startdate enumerator_id mon_id, force
-		reshape long equip_, i(startdate enumerator_id mon_id) j(index)
-		* drop cases where equipments were not missing
-		drop if !equip_
+			* reshape data to long format
+			duplicates drop startdate enumerator_id mon_id, force
+			reshape long equip_, i(startdate enumerator_id mon_id) j(index)
+			* drop cases where equipments were not missing
+			drop if !equip_
+			
+			* generate equipment label
+			gen equip_label = ""
+			lab define	equipment_list `equip_labels'
+			foreach equip in `equips' {
+				loc equip_lab			= "`:lab equipment_list `equip''"	
+				replace equip_label 	= "`equip_lab'" if index == `equip'
+			}
+			
+			bys startdate mon_id enumerator_id: replace equip_label = string(_n) + ". " + equip_label
+			bys startdate mon_id enumerator_id: gen count = _N
+			drop index
+			bys startdate mon_id enumerator_id: gen index = _n
+			
+			* Relabel some variables
+				relabel onsite instrument
+				lab var count					"# of Missing Equip"
+				lab var equip_label				"Missing Equipment"
+
+			* Define columns
+			loc start 	= char(65 + `pos_count' + 2)
+			loc end		= char(65 + `pos_count' + 2 + 6)
+			loc row		= `=_N' + 2
+			
+			putexcel `start'1:`end'1 = "LIST OF MISSING EQUIPMENT",				  		 ///
+					merge hcenter txtwrap font(calibri, 12, red) bold border(bottom, double)
+			
+			gsort -startdate enumerator_id mon_id index
+			export excel startdate enumerator_id enumerator_name mon_id mon_name count	 ///
+				equip_label using "`outfile'", sheet("Equipment") sheetmodify cell(`start'2)  ///
+				first(varlab)
+			
+			putexcel `start'2:`end'2		, bold border(bottom)
+			putexcel `start'3:`start'`row'	, nformat(date_d_mon_yy)
 		
-		* generate equipment label
-		gen equip_label = ""
-		lab define	equipment_list `equip_labels'
-		foreach equip in `equips' {
-			loc equip_lab			= "`:lab equipment_list `equip''"	
-			replace equip_label 	= "`equip_lab'" if index == `equip'
 		}
 		
-		bys startdate mon_id enumerator_id: replace equip_label = string(_n) + ". " + equip_label
-		bys startdate mon_id enumerator_id: gen count = _N
-		drop index
-		bys startdate mon_id enumerator_id: gen index = _n
-		
-		* Relabel some variables
-			relabel onsite instrument
-			lab var count					"# of Missing Equip"
-			lab var equip_label				"Missing Equipment"
-
-		* Define columns
-		loc start 	= char(65 + `pos_count' + 2)
-		loc end		= char(65 + `pos_count' + 2 + 6)
-		loc row		= `=_N' + 2
-		
-		putexcel `start'1:`end'1 = "LIST OF MISSING EQUIPMENT",				  		 ///
-				merge hcenter txtwrap font(calibri, 12, red) bold border(bottom, double)
-		
-		gsort -startdate enumerator_id mon_id index
-		export excel startdate enumerator_id enumerator_name mon_id mon_name count	 ///
-			equip_label using "`outfile'", sheet("Equipment") sheetmodify cell(`start'2)  ///
-			first(varlab)
-		
-		putexcel `start'2:`end'2		, bold border(bottom)
-		putexcel `start'3:`start'`row'	, nformat(date_d_mon_yy)
-	
 		/* ---------------
 		   OUTPUT COMMENTS
 		------------------ */
@@ -700,7 +702,7 @@ program define ipacheckmonitor
 			else {
 				* merge in comments
 				drop if mi(setofac_rpt)
-				merge 1:m key using `_comments', assert(match) nogen
+				merge 1:m key using `_comments', keep (match) nogen
 				
 				* Relabel some variables
 				relabel onsite instrument
