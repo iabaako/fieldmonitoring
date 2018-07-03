@@ -81,7 +81,7 @@ program define ipacheckmonitor
 		replace onsite = onsite_mode
 			
 		save `_data'
-	
+		
 		/* ------------------
 		   SAVE COMMENTS DATA
 		--------------------- */
@@ -328,9 +328,9 @@ program define ipacheckmonitor
 		* recode NO and DUL to missing vals before calculating averages
 			* recode -111 to .n
 			* recode -222 to .l
-
+		
 		recode `evalvars' (-111 = .n) (-222 = .l)
-
+		
 		
 		* collapse data by enumerator and position
 		collapse 	(first) enumerator_name								///
@@ -393,7 +393,7 @@ program define ipacheckmonitor
 		OUTPUT LANGUAGE SCORES
 		-------------------------------------------- */	
 		use `_data', clear
-		
+	
 		decode c_language_main, gen (language)
 		ren c_language_main_prof proficiency
 		keep enumerator_id enumerator_name enumerator_role count_ language ///
@@ -404,9 +404,8 @@ program define ipacheckmonitor
 			* merge with language data
 			merge 1:m setofc_languages_fs_rpt using `_language', nogen keep(match master)
 			drop language
-			rename (c_languages_fs_lab_r c_languages_fs_prof_r) (language proficiency)
-			save `_transit'
-				
+			rename (c_languages_fs_lab_r) (language)
+			save `_transit'	
 			use `_data', clear
 			ren c_language_main_prof proficiency
 			decode c_language_main, gen (language)
