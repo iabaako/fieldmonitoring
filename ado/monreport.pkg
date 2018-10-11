@@ -1,0 +1,14 @@
+v 1.0
+d Monitoring Report Programs
+d Stata program to manage and analyze field monitoring data produced by IPA GH field monitoring form
+d
+d KW: data quality
+d KW: field monitoring
+d KW: accompaniment
+d KW: spotcheck
+d
+f monreport.ado
+f monreport_inputs.ado
+f monreport_xls.ado
+f monreport_long.ado
+f monreport_wide.ado
