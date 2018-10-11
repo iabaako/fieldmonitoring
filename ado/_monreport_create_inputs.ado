@@ -5,6 +5,6 @@
 program define _monreport_create_inputs.ado
 	syntax using/
 	qui {
-		
+		impor
 	}
 end
