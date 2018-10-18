@@ -1,4 +1,4 @@
-*! Version 2.0 Ishmail Azindoo Baako May, 2018
+*! Version 1.0 (beta) Ishmail Azindoo Baako May, 2018
 	* Stata program to analyse and report on field montoring data captured
 	* using the IPA Field Monitoring Form
 	
