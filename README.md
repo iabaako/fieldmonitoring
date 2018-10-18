@@ -29,17 +29,17 @@ options
 ## Example Syntax
 ```stata
 * Long Formatted Dataset
-monreport using "IPAGH Field Staff Monitoring Form.dta",				///
-	outfile("monitoring_output.xlsx") 									///
-	xlsform("IPAGH Field Staff Monitoring Form.xlsx") 					///
-	commentdata("IPAGH Field Staff Monitoring Form-ac_rpt.dta") 		///
-	languagedata("IPAGH Field Staff Monitoring Form-language_rpt.dta") 	///
+monreport using "IPAGH Field Staff Monitoring Form.dta", ///
+	outfile("monitoring_output.xlsx") ///
+	xlsform("IPAGH Field Staff Monitoring Form.xlsx") ///
+	commentdata("IPAGH Field Staff Monitoring Form-ac_rpt.dta") ///
+	languagedata("IPAGH Field Staff Monitoring Form-language_rpt.dta") ///
 	long 
 
 * Wide Formatted Dataset 
-monreport using "IPAGH Field Staff Monitoring Form.dta",				///
-	outfile("monitoring_output.xlsx") 									///
-	xlsform("IPAGH Field Staff Monitoring Form.xlsx") 					///
+monreport using "IPAGH Field Staff Monitoring Form.dta", ///
+	outfile("monitoring_output.xlsx") ///
+	xlsform("IPAGH Field Staff Monitoring Form.xlsx") ///
 	wide
 ```
 
