@@ -8,7 +8,3 @@ d KW: accompaniment
 d KW: spotcheck
 d
 f monreport.ado
-f monreport_inputs.ado
-f monreport_xls.ado
-f monreport_long.ado
-f monreport_wide.ado

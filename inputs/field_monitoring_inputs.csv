@@ -1,0 +1,82 @@
+id,name,role,role_id,can_be_monitored,can_monitor,mon_pin,weekly_target,weekly_submissions
+170165,Mohammed Iddrisu Baba,Surveyor,1,1,0,,10,
+170184,Rabiatu Abagana,Surveyor,1,1,0,,10,
+170187,Abdul- Basit Abubakari,Surveyor,1,1,0,,10,
+170194,Abdul-Aziz Seidu,Surveyor,1,1,0,,10,
+170203,Mashood Bawa,Surveyor,1,1,0,,10,
+170207,Mohammed Alhassan,Surveyor,1,1,0,,10,
+170211,Ahmed Ibrahim Alhassan,Surveyor,1,1,0,,10,
+170220,Abdul-Wadud Mohammed,Surveyor,1,1,0,,10,
+170225,Abdul-Shakur Yakubu,Surveyor,1,1,0,,10,
+170241,Adam Baba Iddrisu,Surveyor,1,1,0,,10,
+170245,Hudu Zakaria,Surveyor,1,1,0,,10,
+170262,Abu Sadiq Saeed,Surveyor,1,1,0,,10,
+170275,Adam Baba Yakubu,Surveyor,1,1,0,,10,
+170451,Prosper Ayimbilla Ayindenaba,Surveyor,1,1,0,,10,
+170592,Mohammed Haruna,Surveyor,1,1,0,,10,
+170625,Mohammed Fueini Juuna,Surveyor,1,1,0,,10,
+170636,Amos Mbabil Bogre,Surveyor,1,1,0,,10,
+180003,Tahiru Khadijah,Surveyor,1,1,0,,10,
+180004,Suweiba Mutawakil,Surveyor,1,1,0,,10,
+180026,Esther Kolbila,Surveyor,1,1,0,,10,
+180124,Richard Nabia,Surveyor,1,1,0,,10,
+180127,Abagana Sarah,Surveyor,1,1,0,,10,
+180129,Habiba Abubakar Sadik,Surveyor,1,1,0,,10,
+180132,Abukari    Abdul Muhusin,Surveyor,1,1,0,,10,
+180133,Fuseini  Mohammed,Surveyor,1,1,0,,10,
+180134,Yakubu Salawudeen,Surveyor,1,1,0,,10,
+180135,Najilawu Abdul Majeed,Surveyor,1,1,0,,10,
+180136,Mabruk Salifu,Surveyor,1,1,0,,10,
+180148,Abdul Bais Haruna,Surveyor,1,1,0,,10,
+180149,Yussif Fadle  Rahman,Surveyor,1,1,0,,10,
+180150,Mariama Sadik Abubakari  ,Surveyor,1,1,0,,10,
+170504,Rashad Mohammed Mutawakil,Auditor (Field/Phone),2,1,0,,10,
+170508,Abdul Majeed Mutawakil,Auditor (Field/Phone),2,1,0,,10,
+170547,Christopher Nyezuk Pubeng,Auditor (Field/Phone),2,1,0,,10,
+170626,Joseph Aberinga Takora,Auditor (Field/Phone),2,1,0,,10,
+170180,Salifu Ali,Child Assessor,15,1,0,,10,
+170193,Abass Sulemana,Child Assessor,15,1,0,,10,
+170214,Mohammed Fuseini Mohammed,Child Assessor,15,1,0,,10,
+170240,Fuseini Mohammed,Child Assessor,15,1,0,,10,
+170247,Alhassan Abdul Ganiyu,Child Assessor,15,1,0,,10,
+170259,Shirazu Yakubu,Child Assessor,15,1,0,,10,
+170270,Omar Rahama,Child Assessor,15,1,0,,10,
+170272,Abdallah Shiraz,Child Assessor,15,1,0,,10,
+170524,Zara Karim Bawa,Child Assessor,15,1,0,,10,
+170532,Kazue Ajedewe David,Child Assessor,15,1,0,,10,
+170540,Enoch Aniah Ayamdoo,Child Assessor,15,1,0,,10,
+170576,Abdulai Adam,Child Assessor,15,1,0,,10,
+170642,Moses Ayinyelya Abaane,Child Assessor,15,1,0,,10,
+170644,Robert Nintang Basumah,Child Assessor,15,1,0,,10,
+170645,Dominic Laalbire Mpahiba,Child Assessor,15,1,0,,10,
+170651,Abdul Hakim Tahidu,Child Assessor,15,1,0,,10,
+170652,Abdulai Seidu Munkaila,Child Assessor,15,1,0,,10,
+180013,Mariam Atchulo,Child Assessor,15,1,0,,10,
+180024,Joyce Ayinbono Adima,Child Assessor,15,1,0,,10,
+180025,Sheila Norin Benim,Child Assessor,15,1,0,,10,
+180027,Talata Sapaka,Child Assessor,15,1,0,,10,
+180029,Christiana Assibi Sebire,Child Assessor,15,1,0,,10,
+180063,Joana Efua Mensah,Child Assessor,15,1,0,,10,
+180139,Sakina Iddrisu,Child Assessor,15,1,0,,10,
+180140,Mercy Abentara,Child Assessor,15,1,0,,10,
+180141,Yussif Lamusah Amadu,Child Assessor,15,1,0,,10,
+180142,Bassit Yahaya,Child Assessor,15,1,0,,10,
+180143,Ibrahim Mohammed  Gazale,Child Assessor,15,1,0,,10,
+180144,Abdul Latif Ibrahim,Child Assessor,15,1,0,,10,
+180145,Muhammed Awal Yakubu,Child Assessor,15,1,0,,10,
+180146,Alhassan Mbangzaa Fuseini,Child Assessor,15,1,0,,10,
+180147,Sadia Abdulai ,Child Assessor,15,1,0,,10,
+170122,Mohammed Mutawakil,Team Leader,13,1,1,6715,10,10
+170186,Abdul-Majeed Jibril,Team Leader,13,1,1,5372,10,10
+170202,Baaco Alhassan Mustapha,Team Leader,13,1,1,3238,10,10
+170271,Mumuni Abdul-Baaki,Team Leader,13,1,1,1467,10,10
+170509,Ibrahim Alhassan,Team Leader,13,1,1,6748,10,10
+170510,Iddrisu Mubarik,Team Leader,13,1,1,2164,10,10
+170121,Muftawu Mohammed,Field Supervisor,14,1,1,6298,10,10
+170124,Abass Umar,Field Supervisor,14,1,1,4353,10,10
+170541,Atampugre Robert,Field Supervisor,14,1,1,7058,10,10
+201,Salifu Amadu,Research Manager,201,0,1,3658,,0
+401,Ishmail Azindoo Baako,Data and Survey Coordinator,401,0,1,2113,,0
+1010,Mubarak Yakubu,Research Associate,1010,0,1,1675,,5
+1006,Kamal Deen Mohammed,Field Manager,1006,0,1,1886,,10
+906,Peter Leighton,PI Staff,906,0,1,5669,,0
