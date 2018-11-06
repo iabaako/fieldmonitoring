@@ -11,7 +11,7 @@ IPA Ghana field montoring template is the result of an efforts to standardize fi
 * monreport can be installed from github
 
 net install monreport, all replace ///
-	from("https://raw.githubusercontent.com/iabaako/fieldmontoring/master/ado")
+	from("https://raw.githubusercontent.com/iabaako/fieldmonitoring/master/ado")
 ```
 
 ## Syntax
