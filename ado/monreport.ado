@@ -41,15 +41,12 @@ program define monreport
 			nois disp as err "options long and wide are mutually exclusive"
 			ex 198
 		}
-		* check that options commentdata and languagedata are specified with option wide
+		* check that options commentdata is specified with option long
 		if "`long'" ~= "" & "`commentdata'" == "" {
 			noi disp as err "option commentdata expected with long format"
 			ex 198
 		}
-		if "`long'" ~= "" & "`languagedata'" == "" {
-			noi disp as err "option languagedata expected with long format"
-			ex 198
-		}
+		
 
 		/* ---------
 		   TEMPFILES
@@ -169,7 +166,7 @@ program define monreport
 			use `_data', clear
 			
 			count if !missing(c_languages_fs)
-			if !_rc {
+			if `r(N)' {
 				count if !missing(c_languages_fs)
 				loc lang_count `r(N)'
 				if `lang_count' > 0 {
@@ -228,9 +225,8 @@ program define monreport
 		putexcel B2:B11, border(right, thick)
 
 		* adjust column width
-		* mata:	adjust_column("`outfile'", "Project Details", )
-	
-
+		mata: adjust_column_width("`outfile'", "Project Details", (1, 2), (20, 25))
+		
 		/* ---------------------------
 		REPORT ON SUBMISSION
 		------------------------------ */
@@ -298,9 +294,12 @@ program define monreport
 		loc --cell
 		putexcel G2:G`cell', border(right, thick) 
 		
+		mata: adjust_column_width("`outfile'", "Submissions", (1, 2, 4, 5, 6, 7), (10, 15, 10, 15, 15, 15))
+
 		* save data
 		destring *id*, replace
 		save `_data', replace
+		
 
 		/* --------------------------------------
 		   REPORT SUBMISSION SUMMARIES PER MONITOR
@@ -347,7 +346,12 @@ program define monreport
 		putexcel A2:A`=`=_N'+2', border(left, thick)
 		putexcel `col'2:`col'`=`=_N'+2', border(right, thick)
 		putexcel A`=`=_N'+2':`col'`=`=_N'+2', border(bottom, thick)
-	
+		
+		* adjust column widths
+		mata: mn_len = colmax(strlen(st_sdata(., 2))) + 1
+		mata: ps_len = colmax(strlen(st_sdata(., 3))) + 1
+		mata: adjust_column_width("`outfile'", "Monitors", (1, 2, 3), (10, mn_len, ps_len))
+
 		* Output Submissions and averages for each field staff	
 		* re-import data
 		use `_data', clear
@@ -444,6 +448,13 @@ program define monreport
 		putexcel K2:K`=`=_N'+3', border(right, thick)
 		putexcel A`=`=_N'+3':K`=`=_N'+3', border(bottom, thick)
 
+		order enumerator_id enumerator_name enumerator_role interview_mode_sel ///
+			submissions communication compliance professionalism teamwork independence writing
+
+		mata: mn_len = colmax(strlen(st_sdata(., 2))) + 1
+		mata: ps_len = colmax(strlen(st_sdata(., 3))) + 1
+		mata: adjust_column_width("`outfile'", "Staff Evaluations", (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), (11, mn_len, 17, 17, 11, 14, 26, 14, 12, 13,12))
+		
 		/* -----------------------------------------
 		OUTPUT LANGUAGE SCORES
 		-------------------------------------------- */	
@@ -451,23 +462,27 @@ program define monreport
 	
 		decode c_language_main, gen (language)
 		ren c_language_main_prof proficiency
-		keep enumerator_id enumerator_name enumerator_role count_ language ///
+		keep key enumerator_id enumerator_name enumerator_role count_ language ///
 			c_languages_fs c_languages_fs_rpt_count proficiency
 		
 		destring c_languages_fs, replace
 
-		if "`_language'" ~= "" & `lang_count' > 0 {
+		count if !missing(proficiency)
+
+		if `r(N)' > 0 | ("`_language'" ~= "" & `lang_count' > 0) {
 			keep if c_languages_fs == 1
+			if `lang_count' > 0 {
 			* merge with language data
-			merge 1:m key using `_language', nogen keep(match master)
-			drop language
-			rename (c_languages_fs_lab_r) (language)
-			save `_transit'	
+				merge 1:m key using `_language', nogen keep(match master)
+				drop language
+				rename (c_languages_fs_lab_r) (language)
+				save `_transit'	
+			}
+
 			use `_data', clear
 			ren c_language_main_prof proficiency
 			decode c_language_main, gen (language)
-			keep if c_languages_fs == 1
-			append using `_transit'
+			if `lang_count' > 0 append using `_transit'
 		
 		
 		
@@ -501,10 +516,9 @@ program define monreport
 			putexcel F2:F`=`=_N'+2', border(right, thick)
 			putexcel A`=`=_N'+2':F`=`=_N'+2', border(bottom, thick)
 		}
-		else {
-			keep if c_languages_fs == 1
-		}
-
+		
+		* format ouput
+		mata: adjust_column_width("`outfile'", "Language", (1, 2, 3, 4, 5, 6), (11, 35, 17, 11, 15, 20))
 
 		/* -------------------------------
 		   OUTPUT RETRAIN AND REPLACE LIST
@@ -551,8 +565,11 @@ program define monreport
 				putexcel A2:A`row', border(left, thick)
 				putexcel H2:H`row', border(right, thick)
 				putexcel A`row':H`row', border(bottom, thick)
+
+				mata: adjust_column_width("`outfile'", "Retrain", (1, 2, 3, 4, 5, 6, 7, 8), (11, 11, 35, 17, 11, 35, 17, 40))
+				putexcel H1:H`=`=_N'+2', txtwrap
 			}
-			
+							
 			* export replacement list
 			count if recommendation == 3
 			if `r(N)' > 0 {
@@ -585,6 +602,9 @@ program define monreport
 				putexcel A2:A`row', border(left, thick)
 				putexcel H2:H`row', border(right, thick)
 				putexcel A`row':H`row', border(bottom, thick)
+
+				mata: adjust_column_width("`outfile'", "Replace", (1, 2, 3, 4, 5, 6, 7, 8), (11, 11, 35, 17, 11, 35, 17, 40))
+				putexcel H1:H`=`=_N'+2', txtwrap
 			}
 			
 		}
@@ -628,6 +648,9 @@ program define monreport
 			putexcel A2:K2, hcenter bold border(bottom)	
 			loc row = `absent_count' + 2
 			putexcel A3:A`row'	, nformat(date_d_mon_yy)
+
+			mata: adjust_column_width("`outfile'", "Retrain", (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), (11, 11, 35, 17, 11, 35, 17, 17, 17, 17, 40))
+			putexcel K1:K`=`=_N'+2', txtwrap
 		}
 		
 		/* --------------------------
@@ -764,7 +787,6 @@ program define monreport
 			putexcel `start'2:`start'`row', border(left, thick)
 			putexcel `end'2:`end'`row', border(right, thick)
 			putexcel `start'`row':`end'`row', border(bottom, thick)
-		
 		}
 		
 		/* ---------------
@@ -814,6 +836,9 @@ program define monreport
 				putexcel A2:A`row', border(left, thick)
 				putexcel K2:K`row', border(right, thick)
 				putexcel A`row':K`row', border(bottom, thick)
+
+				mata: adjust_column_width("`outfile'", "Comments", (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), (9, 11, 35, 17, 10, 35, 17, 14, 17, 24, 40))
+				putexcel K1:K`=`=_N'+2', txtwrap
 			}
 		}
 				
@@ -849,3 +874,24 @@ program define relabel
 		lab var `var' "``var'_lab'"
 	}
 end
+
+mata:
+mata clear
+void adjust_column_width(string scalar filename, string scalar sheet, real rowvector columns, real rowvector widths)
+{
+class xl scalar b
+
+b = xl()
+b.load_book(filename)
+b.set_sheet(sheet)
+b.set_mode("open")
+
+for (i = 1;i <= length(columns); i++) {
+	b.set_column_width(columns[i], columns[i], widths[i])
+}
+
+b.close_book()
+
+}
+end
+
