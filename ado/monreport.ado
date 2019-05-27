@@ -7,10 +7,12 @@ program define monreport
 	syntax using/, 
 		outfile(string)
 		xlsform(string)
+		enumdata(string)
 		[commentdata(string) 
 		languagedata(string)
 		wide
-		long]
+		long
+		final]
 		;
 	#d cr
 	
@@ -51,10 +53,29 @@ program define monreport
 		/* ---------
 		   TEMPFILES
 		------------ */
-		tempfile _master _data _corrdata _transit _comments _language
+		tempfile _master _data _corrdata _transit _comments _language _enumdata
 		
 		* save data in memory
 		save `_master', emptyok 
+		
+		/* ----------------------
+		IMPORT ENUMERATOR DETAILS
+		------------------------- */	
+		* allow .csv, .xlsx or .dta file
+		if regexm("`enumdata'", "\.csv$") import delim using "`enumdata'", clear
+		else if regexm("`enumdata'", "\.xlsx$") import excel using "`enumdata'", first clear
+		else if regexm("`enumdata'", "\.dta$") use "`enumdata'", clear
+		else {
+			di as err "file `enumdata' not found. File types allowed are .csv, .xlsx or .dta"
+				ex 601  
+		}
+		
+		keep if can_be_monitored == 1
+		keep id name role role_id
+		ren * enumerator_*
+		
+		gen submissions = 0
+		save `_enumdata'
 		
 		/* ---------------------------------
 		IMPORT ADDITIONAL INFO FROM XLS FORM
@@ -171,9 +192,10 @@ program define monreport
 				loc lang_count `r(N)'
 				if `lang_count' > 0 {
 					keep key c_languages_fs_*
-					destring c_languages_fs_ind_r, replace
+					destring c_languages_fs_rpt_count, replace
+					drop if c_languages_fs_rpt_count == 0
 					#d;
-					reshape long 	c_languages_fs_ind_r 
+					reshape long 	c_languages_fs_ind_r
 									c_languages_fs_lab_r 
 									c_languages_fs_prof_r
 								,	i(key) j(c_languages_fs_ind_r)
@@ -364,18 +386,17 @@ program define monreport
 		* Exclude string variable or yesno variables from list to check
 		unab vars	: c_* ce_* p_* t_* i_* w_*
 		unab exclude: p_equipment p_missing_equipment *_general c_language_main c_language_label c_language_mon ///
-			c_ul_mode c_languages_fs c_languages_fs_rpt_count
+			c_ul_mode c_languages_fs*
 		loc evalvars: list vars - exclude
 								
 		* recode NO and DUL to missing vals before calculating averages
 			* recode -111 to .n
 			* recode -222 to .l
-		
 		recode `evalvars' (-111 = .n) (-222 = .l)
 		
 		* change label for interview_mode
 		label define interview_mode_sel 3 "In-Person/On Phone", modify
-
+		
 		* generate a new var to represent interview interview_mode
 		destring interview_mode, replace
 
@@ -427,6 +448,9 @@ program define monreport
 			replace `var' = int(round(`var'))
 		}
 		
+		* merge in data for all enumdata
+		merge 1:1 enumerator_id using "`_enumdata'", keepusing(enumerator_role enumerator_name submissions)
+		
 		putexcel set "`outfile'", sheet("Staff Evaluations") modify
 		putexcel E1:K1 = "STAFF EVALUATIONS", 				 						 ///
 					merge hcenter font(calibri, 12) bold border(bottom, thick)
@@ -437,7 +461,7 @@ program define monreport
 
 		label values interview_mode_sel interview_mode_sel
 
-		sort enumerator_role enumerator_id 
+		sort enumerator_role submissions enumerator_id
 		export excel enumerator_id enumerator_name enumerator_role interview_mode_sel submissions communication - writing using "`outfile'", ///
 			sheet("Staff Evaluations") sheetmodify         ///
 			cell(A3) first(varlab)
@@ -456,6 +480,35 @@ program define monreport
 		mata: adjust_column_width("`outfile'", "Staff Evaluations", (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), (11, mn_len, 17, 17, 11, 14, 26, 14, 12, 13,12))
 		
 		/* -----------------------------------------
+		OUTPUT AVERAGES FOR EVALUATION INDICATORS (FINAL)
+		-------------------------------------------- */	
+		if "`final'" ~= "" {
+			putexcel set "`outfile'", sheet("Staff Evaluations - for Review") modify
+			putexcel E1:L1 = "STAFF EVALUATIONS - for Review",					 ///
+					merge hcenter font(calibri, 12) bold border(bottom, thick)
+			putexcel E2:L2 = "Indicators", merge hcenter bold border(all, thick)
+			
+			gen comment = ""
+			label var comment "Reason for Changes"
+			export excel enumerator_id enumerator_name enumerator_role interview_mode_sel submissions communication - writing comment using "`outfile'", ///
+				sheet("Staff Evaluations - for Review") sheetmodify         ///
+				cell(A3) first(varlab)
+				
+			putexcel A3:L3, hcenter bold border(top, thick)
+			putexcel A3:L3, hcenter bold border(bottom, thick)
+			putexcel A3:A`=`=_N'+3', border(left, thick)
+			putexcel L2:L`=`=_N'+3', border(right, thick)
+			putexcel A`=`=_N'+3':L`=`=_N'+3', border(bottom, thick)
+
+			order comment, after(writing)
+
+			mata: mn_len = colmax(strlen(st_sdata(., 2))) + 1
+			mata: ps_len = colmax(strlen(st_sdata(., 3))) + 1
+			mata: adjust_column_width("`outfile'", "Staff Evaluations - for Review", (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), (11, mn_len, 17, 17, 11, 14, 26, 14, 12, 13,12, 17))
+			
+		}
+		
+		/* -----------------------------------------
 		OUTPUT LANGUAGE SCORES
 		-------------------------------------------- */	
 		use `_data', clear
@@ -470,20 +523,21 @@ program define monreport
 		count if !missing(proficiency)
 
 		if `r(N)' > 0 | ("`_language'" ~= "" & `lang_count' > 0) {
-			keep if c_languages_fs == 1
+			keep if !missing(c_languages_fs)
+			loc lang_count `=_N'
 			if `lang_count' > 0 {
 			* merge with language data
 				merge 1:m key using `_language', nogen keep(match master)
 				drop language
-				rename (c_languages_fs_lab_r) (language)
+				rename (c_languages_fs_lab_r ) (language)
+				replace proficiency = c_languages_fs_prof_r
 				save `_transit'	
 			}
-
+			
 			use `_data', clear
 			ren c_language_main_prof proficiency
 			decode c_language_main, gen (language)
 			if `lang_count' > 0 append using `_transit'
-		
 		
 		
 			* drop languages with missing proficiency. This will happen if monitor does not understand language
@@ -519,7 +573,7 @@ program define monreport
 		
 		* format ouput
 		mata: adjust_column_width("`outfile'", "Language", (1, 2, 3, 4, 5, 6), (11, 35, 17, 11, 15, 20))
-
+		
 		/* -------------------------------
 		   OUTPUT RETRAIN AND REPLACE LIST
 		---------------------------------- */	
@@ -788,6 +842,72 @@ program define monreport
 			putexcel `end'2:`end'`row', border(right, thick)
 			putexcel `start'`row':`end'`row', border(bottom, thick)
 		}
+		
+		/* ------------------------------------
+		OUTPUT MOTORBIKE COMPLAINCE INFORMATION
+		-------------------------------------- */	
+		use `_data', clear
+		* check that field staff use motorbikes
+		cap assert m_reg_motorbike_yn != 1 
+		if _rc == 9 {
+			* keep only observations with motobikes
+			keep if m_reg_motorbike_yn == 1
+			
+			* tag observations with violations
+			gen viol = 0
+			gen message = ""
+			
+			replace viol = 1 if m_reg_motorbike_chassis_conf == 0 & m_reg_motorbike_reg_conf == 1 
+			replace message = "Miss match between chassis [" + m_reg_motorbike_chassis + "] and registration number [" + m_reg_motorbike_reg + "]" ///
+				if viol == 1
+			
+			egen viol_count = anycount(m_nreg_*_yn), val(0)
+			replace viol = 2 if viol_count
+			
+			keep if viol
+			replace message = "Not compliant on " + string(viol_count) + " motorbike compliance indicators" if viol == 2
+			
+			* export motorbike compliance issues
+			gsort -subdate enumerator_id mon_id 
+			
+			* relabel vars and export data
+			lab var m_nreg_reg_yn 		"Registration"
+			lab var m_nreg_roadw_yn 	"Road Worthiness"
+			lab var m_nreg_insur_yn 	"Insurance"
+			lab var m_nreg_license_yn 	"Lincense (A)"
+			lab var m_nreg_helmet_yn	"Helmet"
+			
+			recode m_nreg_*_yn (. = .n)
+			lab define ynn 1 "Yes" 0 "No" .n "NA"
+			lab val m_nreg_*_yn ynn
+			
+			putexcel set "`outfile'", sheet("Motorbike Compliance") modify
+			putexcel A1:M1 = "MOTOEBIKE COMPLIANCE ISSUES",  	///
+				merge hcenter font(calibri, 12) bold border(bottom, thick)
+			
+			relabel enumerator_id enumerator_name enumerator_role mon_id mon_name mon_role subdate
+			
+			keep subdate enumerator_id enumerator_name enumerator_role mon_id mon_name mon_role ///
+				message m_nreg_*_yn
+			order subdate enumerator_id enumerator_name enumerator_role mon_id mon_name mon_role ///
+				message m_nreg_reg_yn m_nreg_roadw_yn m_nreg_insur_yn m_nreg_license_yn m_nreg_helmet_yn
+			
+			noi disp "Exporting `=_N' motorbike compliance issues to sheet Motorbike Compliance"
+			export excel using "`outfile'", sheet("Motorbike Compliance") sheetmodify cell(A2) first(varlab)
+			
+			putexcel A2:M2, hcenter bold border(bottom, thick)
+			* format date
+			loc row = `=_N' + 2
+			putexcel A3:A`row', nformat(date_d_mon_yy)
+
+			putexcel A2:A`row', border(left, thick)
+			putexcel M2:M`row', border(right, thick)
+			putexcel A`row':M`row', border(bottom, thick)
+
+			mata: adjust_column_width("`outfile'", "Motorbike Compliance", (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), (9, 11, 35, 17, 10, 35, 17, 45, 12, 16, 10, 10, 8))
+			putexcel H1:H`=`=_N'+2', txtwrap
+		}
+		
 		
 		/* ---------------
 		   OUTPUT COMMENTS
