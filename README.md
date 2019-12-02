@@ -19,8 +19,9 @@ net install monreport, all replace ///
 monreport using filename, outfile(string) xlsform(string) [commentdata(string) languagedata(string) wide long]
 
 options
-	outfile 		- field monitoring output
-	xlsform 		- SurveyCTO xls form for field monitoring
+	outfile 	- field monitoring output
+	xlsform         - SurveyCTO xls form for field monitoring
+	enumdata        - enumerator data (.csv, .xlsx, .dta) format
 	commentdata 	- comment data (.dta) format [required with long formatted data]
 	languagedata	- language data (.dta) format [required with long formatted data]
 
@@ -32,6 +33,7 @@ options
 monreport using "IPAGH Field Staff Monitoring Form.dta", ///
 	outfile("monitoring_output.xlsx") ///
 	xlsform("IPAGH Field Staff Monitoring Form.xlsx") ///
+	enumdata("enumerator_details.csv") ///
 	commentdata("IPAGH Field Staff Monitoring Form-ac_rpt.dta") ///
 	languagedata("IPAGH Field Staff Monitoring Form-language_rpt.dta") ///
 	long 
@@ -39,6 +41,7 @@ monreport using "IPAGH Field Staff Monitoring Form.dta", ///
 * Wide Formatted Dataset 
 monreport using "IPAGH Field Staff Monitoring Form.dta", ///
 	outfile("monitoring_output.xlsx") ///
+	enumdata("enumerator_details.csv") ///
 	xlsform("IPAGH Field Staff Monitoring Form.xlsx") ///
 	wide
 ```
