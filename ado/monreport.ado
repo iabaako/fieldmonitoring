@@ -1,4 +1,4 @@
-*! Version 1.0 (beta) Ishmail Azindoo Baako May, 2018
+*! Version 1.1 (beta) Ishmail Azindoo Baako May, 2018
 	* Stata program to analyse and report on field montoring data captured
 	* using the IPA Field Monitoring Form
 	
@@ -123,6 +123,8 @@ program define monreport
 		* update onsite variable
 		destring onsite_mode, replace
 		replace onsite = onsite_mode
+		
+		destring c_languages_fs_rpt_count *_ind_*, replace
 			
 		save `_data'
 
@@ -191,14 +193,15 @@ program define monreport
 				count if !missing(c_languages_fs)
 				loc lang_count `r(N)'
 				if `lang_count' > 0 {
-					keep key c_languages_fs_*
-					destring c_languages_fs_rpt_count, replace
+					keep key c_languages_fs_* ac_ind_r*
+					destring c_languages_fs_rpt_count c_languages_fs_ind_r_* ac_ind_r*, replace
 					drop if c_languages_fs_rpt_count == 0
+					
 					#d;
-					reshape long 	c_languages_fs_ind_r
-									c_languages_fs_lab_r 
-									c_languages_fs_prof_r
-								,	i(key) j(c_languages_fs_ind_r)
+					reshape long 	ac_ind_r_
+									c_languages_fs_lab_r_
+									c_languages_fs_prof_r_
+								,	i(key) j(c_languages_fs_ind_r_)
 								;
 					#d cr
 					
@@ -527,6 +530,7 @@ program define monreport
 			loc lang_count `=_N'
 			if `lang_count' > 0 {
 			* merge with language data
+				destring c_languages_fs_rpt_count, replace
 				merge 1:m key using `_language', nogen keep(match master)
 				drop language
 				rename (c_languages_fs_lab_r ) (language)
@@ -538,7 +542,6 @@ program define monreport
 			ren c_language_main_prof proficiency
 			decode c_language_main, gen (language)
 			if `lang_count' > 0 append using `_transit'
-		
 		
 			* drop languages with missing proficiency. This will happen if monitor does not understand language
 			drop if missing(proficiency)
@@ -569,10 +572,10 @@ program define monreport
 			putexcel A2:A`=`=_N'+2', border(left, thick)
 			putexcel F2:F`=`=_N'+2', border(right, thick)
 			putexcel A`=`=_N'+2':F`=`=_N'+2', border(bottom, thick)
+			
+			* format ouput
+			mata: adjust_column_width("`outfile'", "Language", (1, 2, 3, 4, 5, 6), (11, 35, 17, 11, 15, 20))
 		}
-		
-		* format ouput
-		mata: adjust_column_width("`outfile'", "Language", (1, 2, 3, 4, 5, 6), (11, 35, 17, 11, 15, 20))
 		
 		/* -------------------------------
 		   OUTPUT RETRAIN AND REPLACE LIST
