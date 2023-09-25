@@ -10,7 +10,7 @@ program define monreport
 		[commentdata(string) 
 		languagedata(string)
 		wide
-		long
+		long]
 		;
 	#d cr
 	
