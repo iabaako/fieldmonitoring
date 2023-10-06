@@ -124,7 +124,7 @@ program define monreport
 		destring onsite_mode, replace
 		replace onsite = onsite_mode
 		
-		destring c_languages_fs_rpt_count *_ind_*, replace
+		destring c_languages_fs_rpt_count, replace
 			
 		save `_data'
 
